@@ -1763,3 +1763,27 @@ fn check_for_conpty_dll() {
         log::warn!("Failed to load conpty.dll. Terminal will work with reduced functionality.");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_is_wsl_without_gui_not_wsl() {
+        // On a regular Linux system (not WSL), the function should return false
+        // This test assumes we're running in a non-WSL environment
+        let proc_version = std::fs::read_to_string("/proc/version").unwrap_or_default();
+        if !proc_version.to_lowercase().contains("microsoft") 
+            && !proc_version.to_lowercase().contains("wsl") {
+            assert_eq!(is_wsl_without_gui(), false);
+        }
+    }
+
+    #[test]
+    #[cfg(not(target_os = "linux"))]
+    fn test_is_wsl_without_gui_non_linux() {
+        // On non-Linux systems, the function should always return false
+        assert_eq!(is_wsl_without_gui(), false);
+    }
+}
