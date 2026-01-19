@@ -249,6 +249,27 @@ fn main() {
         return;
     }
 
+    // Check if running in WSL without GUI support
+    if is_wsl_without_gui() {
+        eprintln!("Zed cannot be run directly inside WSL without GUI support (WSLg).");
+        eprintln!();
+        eprintln!("To use Zed with WSL, you have two options:");
+        eprintln!();
+        eprintln!("1. Enable WSLg (Windows Subsystem for Linux GUI):");
+        eprintln!("   - Ensure you're running Windows 11 or Windows 10 Build 19044+");
+        eprintln!("   - Update WSL: wsl --update");
+        eprintln!("   - Restart your WSL distribution");
+        eprintln!("   - WSLg will automatically provide GUI support");
+        eprintln!();
+        eprintln!("2. Use Zed's Remote Development feature (recommended):");
+        eprintln!("   - Install Zed on Windows (not in WSL)");
+        eprintln!("   - Use the 'projects: open wsl' command to connect to your WSL environment");
+        eprintln!("   - See: https://zed.dev/docs/remote-development#wsl-support");
+        eprintln!();
+        eprintln!("For more information, visit: https://zed.dev/docs/remote-development");
+        process::exit(1);
+    }
+
     zlog::init();
 
     if stdout_is_a_pty() {
@@ -1435,6 +1456,30 @@ fn init_paths() -> HashMap<io::ErrorKind, Vec<&'static Path>> {
 
 fn stdout_is_a_pty() -> bool {
     std::env::var(FORCE_CLI_MODE_ENV_VAR_NAME).ok().is_none() && io::stdout().is_terminal()
+}
+
+#[cfg(target_os = "linux")]
+fn is_wsl_without_gui() -> bool {
+    // Check if running inside WSL by looking for Microsoft/WSL in /proc/version
+    let is_wsl = std::fs::read_to_string("/proc/version")
+        .ok()
+        .map(|content| content.to_lowercase().contains("microsoft") || content.to_lowercase().contains("wsl"))
+        .unwrap_or(false);
+    
+    if !is_wsl {
+        return false;
+    }
+    
+    // Check if GUI support is available via DISPLAY or WAYLAND_DISPLAY
+    let has_display = env::var("DISPLAY").is_ok();
+    let has_wayland = env::var("WAYLAND_DISPLAY").is_ok();
+    
+    !has_display && !has_wayland
+}
+
+#[cfg(not(target_os = "linux"))]
+fn is_wsl_without_gui() -> bool {
+    false
 }
 
 #[derive(Parser, Debug)]
