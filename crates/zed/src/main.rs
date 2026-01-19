@@ -1474,6 +1474,10 @@ fn is_wsl_without_gui() -> bool {
     }
     
     // Check if GUI support is available via DISPLAY or WAYLAND_DISPLAY
+    // Note: This checks if the environment variables are set, not if they're empty.
+    // An empty DISPLAY="" would still be considered as "has_display".
+    // This is intentional - if DISPLAY is set (even if empty), we let the normal
+    // error handling flow take over rather than showing the WSL-specific message.
     let has_display = env::var("DISPLAY").is_ok();
     let has_wayland = env::var("WAYLAND_DISPLAY").is_ok();
     
