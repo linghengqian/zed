@@ -1463,7 +1463,10 @@ fn is_wsl_without_gui() -> bool {
     // Check if running inside WSL by looking for Microsoft/WSL in /proc/version
     let is_wsl = std::fs::read_to_string("/proc/version")
         .ok()
-        .map(|content| content.to_lowercase().contains("microsoft") || content.to_lowercase().contains("wsl"))
+        .map(|content| {
+            let lowercase = content.to_lowercase();
+            lowercase.contains("microsoft") || lowercase.contains("wsl")
+        })
         .unwrap_or(false);
     
     if !is_wsl {
@@ -1774,8 +1777,8 @@ mod tests {
         // On a regular Linux system (not WSL), the function should return false
         // This test assumes we're running in a non-WSL environment
         let proc_version = std::fs::read_to_string("/proc/version").unwrap_or_default();
-        if !proc_version.to_lowercase().contains("microsoft") 
-            && !proc_version.to_lowercase().contains("wsl") {
+        let lowercase = proc_version.to_lowercase();
+        if !lowercase.contains("microsoft") && !lowercase.contains("wsl") {
             assert_eq!(is_wsl_without_gui(), false);
         }
     }
